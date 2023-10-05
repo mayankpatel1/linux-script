@@ -1,0 +1,41 @@
+#!/bin/bash
+
+# Define thresholds
+  cpu_threshold=90
+  memory_threshold=90
+  disk_io_threshold=50
+  network_threshold=1024  # 1 MBps
+
+# Function to collect and log system metrics
+collect_metrics() {
+  
+  # Collect CPU usage
+  cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | awk -F. '{print $1}')
+
+  # Collect memory usage
+  memory_usage=$(free | grep Mem | awk '{print $3/$2 * 100.0}' | awk -F. '{print $1}')
+
+  # Collect disk I/O usage
+  disk_io=$(iostat -d -x | grep 'sda' | awk '{print $12}')
+
+  # Collect network usage
+  network_usage=$(ifstat | grep -m 1 'Total' | awk '{print $8}')
+
+  
+  # Check and log resource usage
+  if [ "$cpu_usage" -ge "$cpu_threshold" ] || [ "$memory_usage" -ge "$memory_threshold" ] || [ "$disk_io" -ge "$disk_io_threshold" ] || [ "$network_usage" -ge "$network_threshold" ]; then
+    echo "CPU Usage: $cpu_usage%" >> /var/log/metrics.txt
+    echo "Memory Usage: $memory_usage%" >> /var/log/metrics.txt
+    echo "Disk I/O Usage: $disk_io%" >> /var/log/metrics.txt
+    echo "Network Usage: $network_usage KBps" >> /var/log/metrics.txt
+    echo "-----------------------------" >> /var/log/metrics.txt
+  fi
+}
+
+# Run the script in a loop
+while true; do
+  collect_metrics
+  sleep 60  # Collect metrics every 60 seconds (adjust as needed)
+done
+
+    
